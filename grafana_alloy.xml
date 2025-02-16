@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Alloy</Name>
+  <Repository>grafana/alloy:latest</Repository>
+  <Registry>https://hub.docker.com/r/grafana/alloy</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview>Grafana Alloy is a vendor-agnostic OpenTelemetry Collector distribution with extra capabilities for writing, running, and debugging powerful pipelines.</Overview>
+  <Category/>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <TemplateURL/>
+  <Icon>https://djeqr6to3dedg.cloudfront.net/repo-logos/grafana/alloy/live/logo-1712849747833.png</Icon>
+  <ExtraParams/>
+  <PostArgs>run --server.http.listen-addr=0.0.0.0:8080 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy</PostArgs>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI" Target="8080" Default="" Mode="tcp" Description="" Type="Port" Display="always" Required="false" Mask="false">8080</Config>
+  <Config Name="Data" Target="/etc/alloy" Default="" Mode="rw" Description="" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/alloy</Config>
+  <Config Name="Logs" Target="/var/log" Default="" Mode="ro" Description="" Type="Path" Display="always" Required="false" Mask="false">/var/log</Config>
+  <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="" Mode="ro" Description="" Type="Path" Display="always" Required="false" Mask="false">/var/run/docker.sock</Config>
+  <TailscaleStateDir/>
+</Container>

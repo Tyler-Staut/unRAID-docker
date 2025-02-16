@@ -1,0 +1,91 @@
+// Docker discovery
+discovery.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+// Relabel the discovered Docker targets
+discovery.relabel "logs_integrations_docker" {
+  targets = []
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+
+  rule {
+    // Docker often has a leading slash for container names, e.g. "/nginx"
+    // This regex strips the leading slash.
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+// Ingest Docker logs and forward them directly to local Loki
+loki.source.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+  
+  // Dynamically discovered targets
+  targets       = discovery.docker.logs_integrations_docker.targets
+  relabel_rules = discovery.relabel.logs_integrations_docker.rules
+
+  // Send Docker logs straight to the local Loki endpoint
+  forward_to = [loki.write.local_loki.receiver]
+}
+
+// Discover local files in /var/log/*
+local.file_match "applogs" {
+  path_targets = [{"__path__" = "/var/log/*"}]
+}
+
+// Ingest those local files
+loki.source.file "local_files" {
+  targets    = local.file_match.applogs.targets
+  // Forward them to a processing pipeline before final write
+  forward_to = [loki.process.add_new_label.receiver]
+}
+
+// Process the local file logs
+//    Here we assume your logs are in logfmt format, extracting "level"
+loki.process "add_new_label" {
+  stage.logfmt {
+    mapping = {
+      "extracted_level" = "level",
+    }
+  }
+
+  // Add the extracted_level as a "level" label
+  stage.labels {
+    values = {
+      "level" = "extracted_level",
+    }
+  }
+
+  // Finally, forward to local Loki
+  forward_to = [loki.write.local_loki.receiver]
+}
+
+// Write logs to local Loki instance
+loki.write "local_loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+    // If you need basic auth or tokens, configure them here
+    // example:
+    // basic_auth {
+    //   username = "myuser"
+    //   password = "mypassword"
+    // }
+  }
+}
